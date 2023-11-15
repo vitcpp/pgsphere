@@ -1,5 +1,7 @@
 #include "point.h"
 #include "pgs_util.h"
+#include <utils/float.h>
+#include <common/hashfn.h>
 #include <catalog/namespace.h>
 
 /* This file contains definitions for spherical point functions. */
@@ -314,9 +316,31 @@ spherepoint_equal(PG_FUNCTION_ARGS)
 Datum
 spherepoint_hash32(PG_FUNCTION_ARGS)
 {
-	SPoint	   *p1 = (SPoint *) PG_GETARG_POINTER(0);
-	Datum		h1 = DirectFunctionCall1(hashfloat8, p1->lat);
-	Datum		h2 = DirectFunctionCall1(hashfloat8, p1->lng);
+	SPoint	    *p1 = (SPoint *) PG_GETARG_POINTER(0);
+	const uint32 h1 = pgs_hashfloat8(p1->lat);
+	const uint32 h2 = pgs_hashfloat8(p1->lng);
 
-	PG_RETURN_INT32(DatumGetInt32(h1) ^ DatumGetInt32(h2));
+	PG_RETURN_INT32(h1 ^ h2);
+}
+
+uint32
+pgs_hashfloat8(float8 key)
+{
+	/*
+	 * On IEEE-float machines, minus zero and zero have different bit patterns
+	 * but should compare as equal.  We must ensure that they have the same
+	 * hash value, which is most reliably done this way:
+	 */
+	if (key == (float8) 0)
+		PG_RETURN_UINT32(0);
+
+	/*
+	 * Similarly, NaNs can have different bit patterns but they should all
+	 * compare as equal.  For backwards-compatibility reasons we force them to
+	 * have the hash value of a standard NaN.
+	 */
+	if (isnan(key))
+		key = get_float8_nan();
+
+	return hash_bytes((unsigned char *) &key, sizeof(key));
 }

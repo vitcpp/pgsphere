@@ -17,6 +17,8 @@ typedef struct
 
 Oid	get_spoint_type_oid(void);
 
+extern uint32 pgs_hashfloat8(float8 key);
+
 /*
  * Calculate the distance between two spherical points in radians.
  */
