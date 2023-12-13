@@ -2,6 +2,7 @@
 include Makefile.common.mk
 
 RELEASE_SQL      = $(EXTENSION)--$(PGSPHERE_VERSION).sql
+
 USE_PGXS         = 1
 USE_HEALPIX     ?= 1
 PGINDENT        ?= pgindent
