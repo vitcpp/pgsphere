@@ -15,7 +15,7 @@
 #define OUTPUT_DEG	2	 /* output in degrees */
 #define OUTPUT_DMS	3	 /* output in degrees, minutes, seconds */
 #define OUTPUT_HMS	4	 /* output in hour, minutes, seconds */
-
+#define OUTPUT_HM1	5	 /* output in hour, minutes, seconds without letters & parentheses */
 /*.
  * Holds the current output modus.
  * Default is radians.
@@ -136,7 +136,7 @@ set_sphere_output_precision(PG_FUNCTION_ARGS)
 
 	if (c > DBL_DIG)
 		c = DBL_DIG;
-	if (c < 1)
+	if (c < 0)
 		c = DBL_DIG;
 	sphere_output_precision = c;
 
@@ -165,6 +165,10 @@ set_sphere_output(PG_FUNCTION_ARGS)
 	else if (strcmp(c, "HMS") == 0)
 	{
 		sphere_output = OUTPUT_HMS;
+	}
+	else if (strcmp(c, "HM1") == 0)
+	{
+	sphere_output = OUTPUT_HM1;
 	}
 	else
 	{
@@ -203,20 +207,30 @@ spherepoint_out(PG_FUNCTION_ARGS)
 			rad_to_dms(sp->lng, &lngdeg, &lngmin, &lngsec);
 			rad_to_dms(sp->lat, &latdeg, &latmin, &latsec);
 			sprintf(buffer,
-					"(%3ud %2um %.*gs , %c%2ud %2um %.*gs)",
-					lngdeg, lngmin, sphere_output_precision, lngsec,
+					"(%03ud %02um %0*.*fs , %c%02ud %02um %0*.*fs)",
+					lngdeg, lngmin, sphere_output_precision + 2 + (sphere_output_precision>0), sphere_output_precision, lngsec,
 					(sp->lat < 0) ? ('-') : ('+'),
-					latdeg, latmin, sphere_output_precision, latsec);
+					latdeg, latmin, sphere_output_precision + 2 + (sphere_output_precision>0), sphere_output_precision, latsec);
 			break;
 
 		case OUTPUT_HMS:
 			rad_to_dms(sp->lng / 15, &lngdeg, &lngmin, &lngsec);
 			rad_to_dms(sp->lat, &latdeg, &latmin, &latsec);
 			sprintf(buffer,
-					"(%3uh %2um %.*gs , %c%2ud %2um %.*gs)",
-					lngdeg, lngmin, sphere_output_precision, lngsec,
+					"(%02uh %02um %0*.*fs , %c%02ud %02um %0*.*fs)",
+					lngdeg, lngmin, sphere_output_precision + 2 + (sphere_output_precision>0), sphere_output_precision, lngsec,
 					(sp->lat < 0) ? ('-') : ('+'),
-					latdeg, latmin, sphere_output_precision, latsec);
+					latdeg, latmin, sphere_output_precision + 2 + (sphere_output_precision>0), sphere_output_precision, latsec);
+			break;
+
+		case OUTPUT_HM1:
+			rad_to_dms(sp->lng / 15, &lngdeg, &lngmin, &lngsec);
+			rad_to_dms(sp->lat, &latdeg, &latmin, &latsec);
+			sprintf(buffer,
+				"%02u %02u %0*.*f %c%02u %02u %0*.*f",
+				lngdeg, lngmin, sphere_output_precision + 2 + (sphere_output_precision>0) * 2, sphere_output_precision + (sphere_output_precision>0),
+				lngsec, (sp->lat < 0) ? ('-') : ('+'),
+				latdeg, latmin, sphere_output_precision + 2 + (sphere_output_precision>0), sphere_output_precision, latsec);
 			break;
 
 		default:
@@ -257,6 +271,7 @@ spherecircle_out(PG_FUNCTION_ARGS)
 			break;
 
 		case OUTPUT_HMS:
+		case OUTPUT_HM1:
 		case OUTPUT_DMS:
 			rad_to_dms(c->radius, &rdeg, &rmin, &rsec);
 			sprintf(buffer,
@@ -306,6 +321,7 @@ sphereellipse_out(PG_FUNCTION_ARGS)
 			break;
 
 		case OUTPUT_HMS:
+		case OUTPUT_HM1:
 		case OUTPUT_DMS:
 			rad_to_dms(e->rad[0], &rdeg[0], &rmin[0], &rsec[0]);
 			rad_to_dms(e->rad[1], &rdeg[1], &rmin[1], &rsec[1]);
@@ -365,6 +381,7 @@ sphereline_out(PG_FUNCTION_ARGS)
 			break;
 
 		case OUTPUT_HMS:
+		case OUTPUT_HM1:
 		case OUTPUT_DMS:
 			rad_to_dms(sl->length, &rdeg, &rmin, &rsec);
 			sprintf(out,
@@ -422,6 +439,7 @@ spheretrans_out(PG_FUNCTION_ARGS)
 				break;
 
 			case OUTPUT_HMS:
+			case OUTPUT_HM1:
 			case OUTPUT_DMS:
 				rad_to_dms(val[i].lng, &rdeg, &rmin, &rsec);
 				sprintf(&buf[0],
