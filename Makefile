@@ -36,7 +36,8 @@ DATA_built  = $(RELEASE_SQL) \
 			  pg_sphere--1.4.0--1.4.1.sql \
 			  pg_sphere--1.4.1--1.4.2.sql \
 			  pg_sphere--1.4.2--1.5.0.sql \
-			  pg_sphere--1.5.0--1.5.1.sql
+			  pg_sphere--1.5.0--1.5.1.sql \
+			  pg_sphere--1.5.1--1.5.2.sql
 
 DOCS        = README.pg_sphere COPYRIGHT.pg_sphere
 TESTS       = version tables points euler circle line ellipse poly path box \
